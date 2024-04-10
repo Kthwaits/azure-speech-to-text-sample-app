@@ -11,18 +11,11 @@ const speechsdk = require('microsoft-cognitiveservices-speech-sdk')
 function App() {
   const recognizerRef = useRef(null);
   const [displayText, setDisplayText] = useState('');
-  const [interimText, setInterimText] = useState('');
   const [recordingActive, setRecordingActive] = useState(false);
-
-  function onRecognizing(sender, recognitionEventArgs) {
-    var result = recognitionEventArgs.result;
-    setInterimText(result.text);
-  }
 
   function onRecognized(sender, recognitionEventArgs) {
     var result = recognitionEventArgs.result;
     setDisplayText(prevDisplayText => prevDisplayText + ' ' + result.text);
-    setInterimText('');
   }
   function onSessionStarted(sender, sessionEventArgs) {
     setRecordingActive(true);
@@ -31,7 +24,6 @@ function App() {
     setRecordingActive(false);
   }
 
-
   async function sttFromMic() {
     if (!recordingActive) {
       const tokenObj = await getTokenOrRefresh();
@@ -39,7 +31,6 @@ function App() {
       speechConfig.speechRecognitionLanguage = 'en-US';
       const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
       recognizerRef.current = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
-      recognizerRef.current.recognizing = onRecognizing;
       recognizerRef.current.recognized = onRecognized;
       recognizerRef.current.sessionStarted = onSessionStarted;
       recognizerRef.current.sessionStopped = onSessionStopped;
@@ -71,7 +62,7 @@ function App() {
           label="Speech Output"
           multiline
           rows={4}
-          value={displayText + ' ' + interimText}
+          value={displayText}
           onChange={(event) => {
             setDisplayText(event.target.value);
           }}

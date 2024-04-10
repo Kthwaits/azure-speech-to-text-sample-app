@@ -30,6 +30,18 @@ function App() {
     }
   }, [recordingActive]);
 
+  useEffect(() => {
+    if (recordingActive) {
+      const refreshInterval = setInterval(async () => {
+        const tokenObj = await getTokenOrRefresh();
+        recognizerRef.current.authToken = tokenObj.authToken;
+      }, 9 * 60 * 1000); // 9 minutes
+      return () => {
+        clearInterval(refreshInterval);
+      };
+    }
+  }, [recordingActive]);
+
   function onRecognizing(sender, recognitionEventArgs) {
     const resultText = recognitionEventArgs?.result?.text;
     if (resultText) {
@@ -49,7 +61,6 @@ function App() {
   function onSessionStopped(sender, sessionEventArgs) {
     setRecordingActive(false);
   }
-
 
   async function sttFromMic() {
     if (!recordingActive) {

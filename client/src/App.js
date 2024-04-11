@@ -10,6 +10,94 @@ import { getTokenOrRefresh } from './utils/getTokenOrRefresh';
 import './App.css';
 
 const speechsdk = require('microsoft-cognitiveservices-speech-sdk')
+const soundClips = document.querySelector(".sound-clips");
+
+let mediaRecorder, chunks = [], audioURL = '';
+
+// Main block for doing the audio recording
+if (navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices
+    .getUserMedia(
+      // constraints - only audio needed for this app
+      {
+        audio: true,
+      },
+    )
+
+    // Success callback
+    .then((stream) => {
+      
+        mediaRecorder = new MediaRecorder(stream);
+    
+        mediaRecorder.onstop = function (e) {
+          console.log("Last data to read (after MediaRecorder.stop() called).");
+    
+          const clipName = prompt(
+            "Enter a name for your sound clip?",
+            "My unnamed clip"
+          );
+    
+          const clipContainer = document.createElement("article");
+          const clipLabel = document.createElement("p");
+          const audio = document.createElement("audio");
+          const deleteButton = document.createElement("button");
+    
+          clipContainer.classList.add("clip");
+          audio.setAttribute("controls", "");
+          deleteButton.textContent = "Delete";
+          deleteButton.className = "delete";
+    
+          if (clipName === null) {
+            clipLabel.textContent = "My unnamed clip";
+          } else {
+            clipLabel.textContent = clipName;
+          }
+    
+          clipContainer.appendChild(audio);
+          clipContainer.appendChild(clipLabel);
+          clipContainer.appendChild(deleteButton);
+          soundClips.appendChild(clipContainer);
+    
+          audio.controls = true;
+          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+          chunks = [];
+          const audioURL = window.URL.createObjectURL(blob);
+          audio.src = audioURL;
+          console.log("recorder stopped");
+    
+          deleteButton.onclick = function (e) {
+            e.target.closest(".clip").remove();
+          };
+    
+          clipLabel.onclick = function () {
+            const existingName = clipLabel.textContent;
+            const newClipName = prompt("Enter a new name for your sound clip?");
+            if (newClipName === null) {
+              clipLabel.textContent = existingName;
+            } else {
+              clipLabel.textContent = newClipName;
+            }
+          };
+        };
+    
+        mediaRecorder.ondataavailable = function (e) {
+          chunks.push(e.data);
+        };
+
+    })
+
+    // Error callback
+    .catch((err) => {
+      console.error(`The following getUserMedia error occurred: ${err}`);
+    });
+  console.log("The mediaDevices.getUserMedia() method is supported.");
+
+ 
+} else {
+  console.log("MediaDevices.getUserMedia() not supported on your browser!");
+}
+
+
 
 function App() {
   const recognizerRef = useRef(null);
@@ -64,6 +152,10 @@ function App() {
 
   async function sttFromMic() {
     if (!recordingActive) {
+      mediaRecorder.start();
+      console.log(mediaRecorder.state);
+      console.log("Recorder started.");
+
       const tokenObj = await getTokenOrRefresh();
       const speechConfig = speechsdk.SpeechConfig.fromAuthorizationToken(tokenObj.authToken, tokenObj.region);
       speechConfig.speechRecognitionLanguage = 'en-US';
@@ -77,6 +169,10 @@ function App() {
     }
     else {
       if (recognizerRef.current) {
+        mediaRecorder.stop();
+        console.log(mediaRecorder.state);
+        console.log("Recorder stopped.");
+
         recognizerRef.current.stopContinuousRecognitionAsync(
           function () {
             recognizerRef.current.close();

@@ -123,6 +123,7 @@ function App() {
             onChange={(event) => {
               setDisplayText(event.target.value);
             }}
+             disabled={recordingActive} // Disable editing while recording is active
           />
           </Box>
         </Grid>

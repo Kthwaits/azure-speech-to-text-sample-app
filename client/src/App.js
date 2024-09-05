@@ -67,6 +67,7 @@ function App() {
       const tokenObj = await getTokenOrRefresh();
       const speechConfig = speechsdk.SpeechConfig.fromAuthorizationToken(tokenObj.authToken, tokenObj.region);
       speechConfig.speechRecognitionLanguage = 'en-US';
+      speechConfig.enableDictation();
       const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
       recognizerRef.current = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
       recognizerRef.current.recognizing = onRecognizing;
